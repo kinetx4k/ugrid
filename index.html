@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ugrid - Color Grid Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #080808;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #080808 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .bg-glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.03);
+            filter: blur(100px);
+            border-radius: 50%;
+            z-index: -1;
+            animation: pulseBg 8s infinite alternate;
+        }
+
+        @keyframes pulseBg {
+            from { transform: scale(1); opacity: 0.3; }
+            to { transform: scale(1.5); opacity: 0.6; }
+        }
+
+        .game-card {
+            background-color: #000000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 32px;
+            width: 95%;
+            max-width: 600px;
+            aspect-ratio: 1.2 / 1;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .is-mobile.game-card {
+            max-width: 450px;
+            aspect-ratio: 0.6 / 1;
+            max-height: 90vh;
+        }
+
+        .reveal {
+            animation: revealContent 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes revealContent {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(15px); }
+            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        .color-tile {
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+            border: 4px solid transparent;
+        }
+
+        .color-tile.selected {
+            transform: scale(1.05);
+            border-color: white;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+
+        .toggle-bg { background: #1a1a1a; border-radius: 20px; padding: 4px; display: flex; gap: 4px; }
+        .toggle-btn { padding: 4px 10px; border-radius: 16px; font-size: 9px; font-weight: 900; transition: all 0.3s; cursor: pointer; white-space: nowrap; }
+        .toggle-btn.active { background: white; color: black; }
+
+        .grid-container {
+            display: grid;
+            gap: 12px;
+            padding: 24px;
+            flex: 1;
+        }
+
+        .btn-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            color: #000;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .btn-circle:hover { transform: scale(1.1); }
+    </style>
+</head>
+<body>
+
+    <div class="bg-glow"></div>
+
+    <div id="device-switcher-container" class="mb-6 z-50 reveal">
+        <div class="toggle-bg">
+            <div id="desktop-btn" class="toggle-btn active" onclick="setDevice('desktop')">DESKTOP</div>
+            <div id="mobile-btn" class="toggle-btn" onclick="setDevice('mobile')">MOBILE</div>
+        </div>
+    </div>
+
+    <div id="app" class="w-full px-4 flex justify-center">
+        <!-- Start Screen -->
+        <div id="start-screen" class="game-card flex flex-col justify-center px-16 reveal">
+            <h1 class="text-8xl font-black mb-2 tracking-tighter italic">ugrid</h1>
+            <div id="highscore-display" class="text-zinc-500 font-bold uppercase text-[10px] mb-6 tracking-[0.3em]">Highscore Level: 1</div>
+            
+            <div class="max-w-sm">
+                <p class="text-zinc-400 text-sm mb-4 leading-relaxed">Find the exact matching color in the grid.</p>
+                <p class="text-white text-lg font-bold mb-10 leading-snug">Use WASD to move and Space/Enter to select, or just click.</p>
+            </div>
+
+            <button onclick="startGame()" class="btn-circle" title="Start Game">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+            </button>
+        </div>
+
+        <!-- Target Memory Screen -->
+        <div id="show-screen" class="game-card hidden">
+            <div id="target-bg" class="absolute inset-0"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="text-[10px] font-black uppercase tracking-[0.4em] mb-4 opacity-50">Target Color</div>
+                    <div id="timer-display" class="text-6xl font-black">2.0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid Choice Screen -->
+        <div id="grid-screen" class="game-card hidden">
+            <div class="flex justify-between items-center px-8 pt-8">
+                <div class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Level <span id="current-level">1</span></div>
+                <div id="game-timer" class="text-2xl font-bold tracking-tighter text-white/20">10.00</div>
+            </div>
+            <div id="color-grid" class="grid-container"></div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="game-card hidden flex flex-col items-center justify-center px-16">
+            <h2 id="result-title" class="text-6xl font-black mb-4 tracking-tighter">Game Over</h2>
+            <p id="result-desc" class="text-zinc-400 mb-10">You reached Level 1</p>
+            <button onclick="resetToMenu()" class="btn-circle">
+                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="fixed bottom-8 reveal">
+        <a href="https://discordapp.com/users/1056147064569987163" target="_blank" class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest hover:text-white transition-colors">
+            Made by kinetx
+        </a>
+    </div>
+
+    <script>
+        let level = 1;
+        let targetColor = null;
+        let gridColors = [];
+        let selectedIdx = 0;
+        let activeTimer = null;
+        let gridSize = 2; // 2x2, 3x3, etc.
+        let gameState = 'menu';
+
+        function setDevice(device) {
+            const cards = document.querySelectorAll('.game-card');
+            cards.forEach(c => device === 'mobile' ? c.classList.add('is-mobile') : c.classList.remove('is-mobile'));
+            document.getElementById('desktop-btn').classList.toggle('active', device === 'desktop');
+            document.getElementById('mobile-btn').classList.toggle('active', device === 'mobile');
+        }
+
+        function startGame() {
+            level = 1;
+            gridSize = 2;
+            nextRound();
+        }
+
+        function nextRound() {
+            gameState = 'showing';
+            targetColor = {
+                h: Math.floor(Math.random() * 360),
+                s: 40 + Math.floor(Math.random() * 40),
+                l: 30 + Math.floor(Math.random() * 40)
+            };
+            
+            showScreen('show-screen');
+            document.getElementById('target-bg').style.backgroundColor = `hsl(${targetColor.h}, ${targetColor.s}%, ${targetColor.l}%)`;
+            
+            let timeLeft = 2.0;
+            const timerEl = document.getElementById('timer-display');
+            timerEl.innerText = timeLeft.toFixed(1);
+            
+            activeTimer = setInterval(() => {
+                timeLeft -= 0.1;
+                timerEl.innerText = Math.max(0, timeLeft).toFixed(1);
+                if (timeLeft <= 0) {
+                    clearInterval(activeTimer);
+                    setupGrid();
+                }
+            }, 100);
+        }
+
+        function setupGrid() {
+            gameState = 'guessing';
+            showScreen('grid-screen');
+            document.getElementById('current-level').innerText = level;
+            
+            // Generate grid
+            const totalTiles = gridSize * gridSize;
+            const correctIdx = Math.floor(Math.random() * totalTiles);
+            gridColors = [];
+            selectedIdx = 0;
+
+            const difficulty = Math.max(2, 25 - level); // Smaller difference = harder
+
+            for (let i = 0; i < totalTiles; i++) {
+                if (i === correctIdx) {
+                    gridColors.push(targetColor);
+                } else {
+                    gridColors.push({
+                        h: (targetColor.h + (Math.random() > 0.5 ? difficulty : -difficulty)) % 360,
+                        s: Math.max(0, Math.min(100, targetColor.s + (Math.random() > 0.5 ? difficulty : -difficulty))),
+                        l: Math.max(0, Math.min(100, targetColor.l + (Math.random() > 0.5 ? difficulty : -difficulty)))
+                    });
+                }
+            }
+
+            renderGrid();
+            startGuessTimer();
+        }
+
+        function renderGrid() {
+            const container = document.getElementById('color-grid');
+            container.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            container.innerHTML = '';
+
+            gridColors.forEach((c, i) => {
+                const tile = document.createElement('div');
+                tile.className = `color-tile ${i === selectedIdx ? 'selected' : ''}`;
+                tile.style.backgroundColor = `hsl(${c.h}, ${c.s}%, ${c.l}%)`;
+                tile.onclick = () => { selectedIdx = i; checkChoice(); };
+                container.appendChild(tile);
+            });
+        }
+
+        function startGuessTimer() {
+            let timeLeft = 10.0;
+            const timerEl = document.getElementById('game-timer');
+            activeTimer = setInterval(() => {
+                timeLeft -= 0.01;
+                timerEl.innerText = Math.max(0, timeLeft).toFixed(2);
+                if (timeLeft <= 0) {
+                    endGame('Time up!');
+                }
+            }, 10);
+        }
+
+        function checkChoice() {
+            clearInterval(activeTimer);
+            const choice = gridColors[selectedIdx];
+            if (choice.h === targetColor.h && choice.s === targetColor.s && choice.l === targetColor.l) {
+                level++;
+                if (level % 3 === 0 && gridSize < 6) gridSize++;
+                nextRound();
+            } else {
+                endGame('Wrong tile!');
+            }
+        }
+
+        function endGame(reason) {
+            clearInterval(activeTimer);
+            gameState = 'result';
+            showScreen('result-screen');
+            document.getElementById('result-title').innerText = reason;
+            document.getElementById('result-desc').innerText = `You reached Level ${level}`;
+            
+            const hs = localStorage.getItem('ugrid_hs') || 1;
+            if (level > hs) localStorage.setItem('ugrid_hs', level);
+        }
+
+        function resetToMenu() {
+            gameState = 'menu';
+            showScreen('start-screen');
+            const hs = localStorage.getItem('ugrid_hs') || 1;
+            document.getElementById('highscore-display').innerText = `Highscore Level: ${hs}`;
+        }
+
+        function showScreen(id) {
+            ['start-screen', 'show-screen', 'grid-screen', 'result-screen'].forEach(s => {
+                document.getElementById(s).classList.add('hidden');
+            });
+            const el = document.getElementById(id);
+            el.classList.remove('hidden');
+            el.classList.add('reveal');
+        }
+
+        // WASD Control
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== 'guessing') return;
+            
+            const key = e.key.toLowerCase();
+            let row = Math.floor(selectedIdx / gridSize);
+            let col = selectedIdx % gridSize;
+
+            if (key === 'w') row = Math.max(0, row - 1);
+            if (key === 's') row = Math.min(gridSize - 1, row + 1);
+            if (key === 'a') col = Math.max(0, col - 1);
+            if (key === 'd') col = Math.min(gridSize - 1, col + 1);
+            if (key === ' ' || key === 'enter') {
+                checkChoice();
+                return;
+            }
+
+            selectedIdx = row * gridSize + col;
+            renderGrid();
+        });
+
+        window.onload = resetToMenu;
+    </script>
+</body>
+</html>
