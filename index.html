@@ -3,338 +3,650 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ugrid - Color Grid Challenge</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Star Slayer: Infinite Ascension</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #080808;
-            background-image: radial-gradient(circle at 50% 50%, #1a1a1a 0%, #080808 100%);
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
-        }
-
-        .bg-glow {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: rgba(255, 255, 255, 0.03);
-            filter: blur(100px);
-            border-radius: 50%;
-            z-index: -1;
-            animation: pulseBg 8s infinite alternate;
-        }
-
-        @keyframes pulseBg {
-            from { transform: scale(1); opacity: 0.3; }
-            to { transform: scale(1.5); opacity: 0.6; }
-        }
-
-        .game-card {
-            background-color: #000000;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 32px;
-            width: 95%;
-            max-width: 600px;
-            aspect-ratio: 1.2 / 1;
-            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 0;
+            background-color: #111;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
             display: flex;
             flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
         }
 
-        .is-mobile.game-card {
-            max-width: 450px;
-            aspect-ratio: 0.6 / 1;
-            max-height: 90vh;
+        #game-container {
+            width: 100%;
+            height: 50vh;
+            position: relative;
+            background: linear-gradient(to bottom, #1a2a6c, #b21f1f, #fdbb2d);
+            border-bottom: 4px solid #fff;
         }
 
-        .reveal {
-            animation: revealContent 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
         }
 
-        @keyframes revealContent {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(15px); }
-            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        }
-
-        .color-tile {
-            border-radius: 12px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
-            border: 4px solid transparent;
-        }
-
-        .color-tile.selected {
-            transform: scale(1.05);
-            border-color: white;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-            z-index: 10;
-        }
-
-        .toggle-bg { background: #1a1a1a; border-radius: 20px; padding: 4px; display: flex; gap: 4px; }
-        .toggle-btn { padding: 4px 10px; border-radius: 16px; font-size: 9px; font-weight: 900; transition: all 0.3s; cursor: pointer; white-space: nowrap; }
-        .toggle-btn.active { background: white; color: black; }
-
-        .grid-container {
-            display: grid;
-            gap: 12px;
-            padding: 24px;
-            flex: 1;
-        }
-
-        .btn-circle {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
+        #ui-container {
+            width: 100%;
+            height: 50vh;
+            background-color: #222;
             display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #333;
+            border: 2px solid #555;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .gold-display {
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .stars-display {
+            color: #00ffff;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .upgrade-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .upgrade-btn {
+            background-color: #444;
+            border: 2px solid #777;
+            color: white;
+            padding: 15px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: #ffffff;
-            color: #000;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
+            text-align: center;
         }
 
-        .btn-circle:hover { transform: scale(1.1); }
+        .upgrade-btn:active {
+            background-color: #666;
+            border-color: #aaa;
+        }
+
+        .upgrade-btn.disabled {
+            background-color: #222;
+            color: #555;
+            border-color: #333;
+            cursor: not-allowed;
+        }
+
+        .prestige-btn {
+            background-color: #4a0e4e;
+            border: 2px solid #a239ca;
+            color: #e7dfdd;
+            padding: 20px;
+            margin-top: 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .prestige-btn:active {
+            background-color: #7b1fa2;
+        }
+
+        .cost-text {
+            color: #ffd700;
+            margin-top: 8px;
+        }
+
+        .desc-text {
+            color: #aaa;
+            font-size: 8px;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        #offline-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #111;
+            border: 4px solid #ffd700;
+            padding: 20px;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        #offline-modal button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #ffd700;
+            color: #000;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <div class="bg-glow"></div>
-
-    <div id="device-switcher-container" class="mb-6 z-50 reveal">
-        <div class="toggle-bg">
-            <div id="desktop-btn" class="toggle-btn active" onclick="setDevice('desktop')">DESKTOP</div>
-            <div id="mobile-btn" class="toggle-btn" onclick="setDevice('mobile')">MOBILE</div>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="offline-modal">
+            <h3>Welcome Back!</h3>
+            <p>Your helpers collected:</p>
+            <h2 id="offline-gold" style="color: #ffd700;">0 Gold</h2>
+            <button onclick="document.getElementById('offline-modal').style.display='none'">Awesome!</button>
         </div>
     </div>
 
-    <div id="app" class="w-full px-4 flex justify-center">
-        <!-- Start Screen -->
-        <div id="start-screen" class="game-card flex flex-col justify-center px-16 reveal">
-            <h1 class="text-8xl font-black mb-2 tracking-tighter italic">ugrid</h1>
-            <div id="highscore-display" class="text-zinc-500 font-bold uppercase text-[10px] mb-6 tracking-[0.3em]">Highscore Level: 1</div>
-            
-            <div class="max-w-sm">
-                <p class="text-zinc-400 text-sm mb-4 leading-relaxed">Find the exact matching color in the grid.</p>
-                <p class="text-white text-lg font-bold mb-10 leading-snug">Use WASD to move and Space/Enter to select, or just click.</p>
-            </div>
+    <div id="ui-container">
+        <div class="top-bar">
+            <div class="gold-display">🪙 Gold: <span id="gold-val">0</span></div>
+            <div class="stars-display">🌟 Stars: <span id="stars-val">0</span> (<span id="bonus-val">0</span>% Bonus)</div>
+        </div>
 
-            <button onclick="startGame()" class="btn-circle" title="Start Game">
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 3l14 9-14 9V3z"/></svg>
+        <div class="upgrade-section">
+            <button class="upgrade-btn" id="btn-sword" onclick="GameApp.buyUpgrade('sword')">
+                <div>🗡️ Sword Level <span id="sword-lvl">1</span></div>
+                <div class="desc-text">Increases tap damage.</div>
+                <div class="cost-text">Cost: <span id="sword-cost">10</span></div>
+            </button>
+
+            <button class="upgrade-btn" id="btn-health" onclick="GameApp.buyUpgrade('health')">
+                <div>❤️ Health Level <span id="health-lvl">1</span></div>
+                <div class="desc-text">Survive stronger monsters.</div>
+                <div class="cost-text">Cost: <span id="health-cost">15</span></div>
+            </button>
+
+            <button class="upgrade-btn" id="btn-helpers" onclick="GameApp.buyUpgrade('helpers')">
+                <div>👻 Helpers Level <span id="helpers-lvl">0</span></div>
+                <div class="desc-text">Collects gold while offline/idle.</div>
+                <div class="cost-text">Cost: <span id="helpers-cost">100</span></div>
+            </button>
+
+            <button class="upgrade-btn" id="btn-armor" onclick="GameApp.buyUpgrade('armor')">
+                <div>🛡️ Armor Level <span id="armor-lvl">0</span></div>
+                <div class="desc-text">Reduces damage taken.</div>
+                <div class="cost-text">Cost: <span id="armor-cost">50</span></div>
             </button>
         </div>
 
-        <!-- Target Memory Screen -->
-        <div id="show-screen" class="game-card hidden">
-            <div id="target-bg" class="absolute inset-0"></div>
-            <div class="absolute inset-0 flex items-center justify-center">
-                <div class="text-center">
-                    <div class="text-[10px] font-black uppercase tracking-[0.4em] mb-4 opacity-50">Target Color</div>
-                    <div id="timer-display" class="text-6xl font-black">2.0</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Grid Choice Screen -->
-        <div id="grid-screen" class="game-card hidden">
-            <div class="flex justify-between items-center px-8 pt-8">
-                <div class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Level <span id="current-level">1</span></div>
-                <div id="game-timer" class="text-2xl font-bold tracking-tighter text-white/20">10.00</div>
-            </div>
-            <div id="color-grid" class="grid-container"></div>
-        </div>
-
-        <!-- Result Screen -->
-        <div id="result-screen" class="game-card hidden flex flex-col items-center justify-center px-16">
-            <h2 id="result-title" class="text-6xl font-black mb-4 tracking-tighter">Game Over</h2>
-            <p id="result-desc" class="text-zinc-400 mb-10">You reached Level 1</p>
-            <button onclick="resetToMenu()" class="btn-circle">
-                <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-            </button>
-        </div>
+        <button class="prestige-btn" id="btn-prestige" onclick="GameApp.prestige()">
+            🌌 ASCEND 🌌<br>
+            <span style="font-size: 8px; color: #ccc;">Reset progress to gain Magic Stars</span><br>
+            <span style="color: #00ffff; font-size: 14px; display: block; margin-top: 5px;">+<span id="pending-stars">0</span> Stars</span>
+        </button>
     </div>
 
-    <div class="fixed bottom-8 reveal">
-        <a href="https://discordapp.com/users/1056147064569987163" target="_blank" class="text-[10px] font-bold text-zinc-600 uppercase tracking-widest hover:text-white transition-colors">
-            Made by kinetx
-        </a>
-    </div>
+<script>
+/**
+ * Star Slayer: Infinite Ascension Engine
+ * Complex Pixel Art Idle/Action Game System
+ */
 
-    <script>
-        let level = 1;
-        let targetColor = null;
-        let gridColors = [];
-        let selectedIdx = 0;
-        let activeTimer = null;
-        let gridSize = 2; // 2x2, 3x3, etc.
-        let gameState = 'menu';
+// Utility for large number formatting
+const NumberFormatter = {
+    format: function(num) {
+        if (num < 1000) return Math.floor(num).toString();
+        const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+        const suffixNum = Math.floor(("" + Math.floor(num)).length / 3);
+        let shortValue = parseFloat((suffixNum != 0 ? (num / Math.pow(1000, suffixNum)) : num).toPrecision(3));
+        if (shortValue % 1 != 0) shortValue = shortValue.toFixed(1);
+        return shortValue + suffixes[suffixNum];
+    }
+};
 
-        function setDevice(device) {
-            const cards = document.querySelectorAll('.game-card');
-            cards.forEach(c => device === 'mobile' ? c.classList.add('is-mobile') : c.classList.remove('is-mobile'));
-            document.getElementById('desktop-btn').classList.toggle('active', device === 'desktop');
-            document.getElementById('mobile-btn').classList.toggle('active', device === 'mobile');
+// Procedural Pixel Art Generator (Color Maps)
+const ColorPalette = {
+    '0': null, // Transparent
+    '1': '#000000', // Black outline
+    '2': '#C0C0C0', // Silver armor
+    '3': '#FFFFFF', // White highlights
+    '4': '#FFD700', // Gold
+    '5': '#8B4513', // Brown leather/wood
+    '6': '#FF0000', // Red health/eyes
+    '7': '#00FF00', // Green slime
+    '8': '#006400', // Dark green outline
+    '9': '#808080'  // Dark gray
+};
+
+const SpriteData = {
+    knight: [
+        "00111100",
+        "01222210",
+        "12232221",
+        "12222221",
+        "01555510",
+        "12222221",
+        "12111121",
+        "01000010",
+        "01100110"
+    ],
+    sword: [
+        "000031",
+        "000321",
+        "003210",
+        "032100",
+        "441000",
+        "140000"
+    ],
+    slime: [
+        "00000000",
+        "00088000",
+        "00877800",
+        "08777780",
+        "87177178",
+        "87777778",
+        "08888880",
+        "00000000"
+    ],
+    star: [
+        "0014100",
+        "0144410",
+        "1443441",
+        "0144410",
+        "0014100"
+    ]
+};
+
+// Complex Math and Progression Logic
+class GameMath {
+    static getCost(baseCost, level, multiplier) {
+        return Math.floor(baseCost * Math.pow(multiplier, level));
+    }
+
+    static getEnemyHP(level) {
+        return Math.floor(20 * Math.pow(1.12, level));
+    }
+
+    static getEnemyDamage(level) {
+        return Math.floor(2 * Math.pow(1.08, level));
+    }
+
+    static getEnemyGold(level) {
+        return Math.floor(5 * Math.pow(1.15, level));
+    }
+
+    static calculatePendingStars(lifetimeGold) {
+        if (lifetimeGold < 1000) return 0;
+        return Math.floor(Math.pow(lifetimeGold / 1000, 0.5));
+    }
+}
+
+// Particle System for visual effects
+class Particle {
+    constructor(x, y, color, speedX, speedY, life) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.speedX = speedX;
+        this.speedY = speedY;
+        this.life = life;
+        this.maxLife = life;
+        this.size = Math.random() * 4 + 2;
+    }
+    update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.speedY += 0.2; // Gravity
+        this.life--;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+        ctx.fillRect(this.x, this.y, this.size, this.size);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+class FloatingText {
+    constructor(x, y, text, color) {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.life = 60;
+        this.speedY = -1;
+    }
+    update() {
+        this.y += this.speedY;
+        this.life--;
+    }
+    draw(ctx) {
+        ctx.fillStyle = this.color;
+        ctx.font = "12px 'Press Start 2P'";
+        ctx.globalAlpha = Math.max(0, this.life / 60);
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.globalAlpha = 1.0;
+    }
+}
+
+// Main Game Controller
+const GameApp = (function() {
+    
+    // Core State Variables
+    let state = {
+        gold: 0,
+        lifetimeGold: 0,
+        magicStars: 0,
+        lastSave: Date.now(),
+        
+        upgrades: {
+            sword: { level: 1, baseCost: 10, multi: 1.2, name: "Sword" },
+            health: { level: 1, baseCost: 15, multi: 1.2, name: "Health" },
+            helpers: { level: 0, baseCost: 100, multi: 1.4, name: "Helpers" },
+            armor: { level: 0, baseCost: 50, multi: 1.3, name: "Armor" }
+        },
+        
+        player: {
+            maxHp: 50,
+            hp: 50,
+            damage: 5
+        },
+        
+        world: {
+            enemyLevel: 1,
+            kills: 0
         }
+    };
 
-        function startGame() {
-            level = 1;
-            gridSize = 2;
-            nextRound();
-        }
+    // Canvas Setup
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
 
-        function nextRound() {
-            gameState = 'showing';
-            targetColor = {
-                h: Math.floor(Math.random() * 360),
-                s: 40 + Math.floor(Math.random() * 40),
-                l: 30 + Math.floor(Math.random() * 40)
-            };
+    function resizeCanvas() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Game Objects
+    let particles = [];
+    let floatingTexts = [];
+    
+    // Entity: Player
+    const playerEntity = {
+        x: 100,
+        y: height - 100,
+        width: 40,
+        height: 45,
+        velocityY: 0,
+        gravity: 0.8,
+        jumpPower: -12,
+        isGrounded: false,
+        attackCooldown: 0,
+        
+        update: function() {
+            this.velocityY += this.gravity;
+            this.y += this.velocityY;
             
-            showScreen('show-screen');
-            document.getElementById('target-bg').style.backgroundColor = `hsl(${targetColor.h}, ${targetColor.s}%, ${targetColor.l}%)`;
-            
-            let timeLeft = 2.0;
-            const timerEl = document.getElementById('timer-display');
-            timerEl.innerText = timeLeft.toFixed(1);
-            
-            activeTimer = setInterval(() => {
-                timeLeft -= 0.1;
-                timerEl.innerText = Math.max(0, timeLeft).toFixed(1);
-                if (timeLeft <= 0) {
-                    clearInterval(activeTimer);
-                    setupGrid();
-                }
-            }, 100);
-        }
-
-        function setupGrid() {
-            gameState = 'guessing';
-            showScreen('grid-screen');
-            document.getElementById('current-level').innerText = level;
-            
-            // Generate grid
-            const totalTiles = gridSize * gridSize;
-            const correctIdx = Math.floor(Math.random() * totalTiles);
-            gridColors = [];
-            selectedIdx = 0;
-
-            const difficulty = Math.max(2, 25 - level); // Smaller difference = harder
-
-            for (let i = 0; i < totalTiles; i++) {
-                if (i === correctIdx) {
-                    gridColors.push(targetColor);
-                } else {
-                    gridColors.push({
-                        h: (targetColor.h + (Math.random() > 0.5 ? difficulty : -difficulty)) % 360,
-                        s: Math.max(0, Math.min(100, targetColor.s + (Math.random() > 0.5 ? difficulty : -difficulty))),
-                        l: Math.max(0, Math.min(100, targetColor.l + (Math.random() > 0.5 ? difficulty : -difficulty)))
-                    });
-                }
-            }
-
-            renderGrid();
-            startGuessTimer();
-        }
-
-        function renderGrid() {
-            const container = document.getElementById('color-grid');
-            container.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-            container.innerHTML = '';
-
-            gridColors.forEach((c, i) => {
-                const tile = document.createElement('div');
-                tile.className = `color-tile ${i === selectedIdx ? 'selected' : ''}`;
-                tile.style.backgroundColor = `hsl(${c.h}, ${c.s}%, ${c.l}%)`;
-                tile.onclick = () => { selectedIdx = i; checkChoice(); };
-                container.appendChild(tile);
-            });
-        }
-
-        function startGuessTimer() {
-            let timeLeft = 10.0;
-            const timerEl = document.getElementById('game-timer');
-            activeTimer = setInterval(() => {
-                timeLeft -= 0.01;
-                timerEl.innerText = Math.max(0, timeLeft).toFixed(2);
-                if (timeLeft <= 0) {
-                    endGame('Time up!');
-                }
-            }, 10);
-        }
-
-        function checkChoice() {
-            clearInterval(activeTimer);
-            const choice = gridColors[selectedIdx];
-            if (choice.h === targetColor.h && choice.s === targetColor.s && choice.l === targetColor.l) {
-                level++;
-                if (level % 3 === 0 && gridSize < 6) gridSize++;
-                nextRound();
+            const groundY = height - 50;
+            if (this.y + this.height >= groundY) {
+                this.y = groundY - this.height;
+                this.velocityY = 0;
+                this.isGrounded = true;
             } else {
-                endGame('Wrong tile!');
-            }
-        }
-
-        function endGame(reason) {
-            clearInterval(activeTimer);
-            gameState = 'result';
-            showScreen('result-screen');
-            document.getElementById('result-title').innerText = reason;
-            document.getElementById('result-desc').innerText = `You reached Level ${level}`;
-            
-            const hs = localStorage.getItem('ugrid_hs') || 1;
-            if (level > hs) localStorage.setItem('ugrid_hs', level);
-        }
-
-        function resetToMenu() {
-            gameState = 'menu';
-            showScreen('start-screen');
-            const hs = localStorage.getItem('ugrid_hs') || 1;
-            document.getElementById('highscore-display').innerText = `Highscore Level: ${hs}`;
-        }
-
-        function showScreen(id) {
-            ['start-screen', 'show-screen', 'grid-screen', 'result-screen'].forEach(s => {
-                document.getElementById(s).classList.add('hidden');
-            });
-            const el = document.getElementById(id);
-            el.classList.remove('hidden');
-            el.classList.add('reveal');
-        }
-
-        // WASD Control
-        window.addEventListener('keydown', (e) => {
-            if (gameState !== 'guessing') return;
-            
-            const key = e.key.toLowerCase();
-            let row = Math.floor(selectedIdx / gridSize);
-            let col = selectedIdx % gridSize;
-
-            if (key === 'w') row = Math.max(0, row - 1);
-            if (key === 's') row = Math.min(gridSize - 1, row + 1);
-            if (key === 'a') col = Math.max(0, col - 1);
-            if (key === 'd') col = Math.min(gridSize - 1, col + 1);
-            if (key === ' ' || key === 'enter') {
-                checkChoice();
-                return;
+                this.isGrounded = false;
             }
 
-            selectedIdx = row * gridSize + col;
-            renderGrid();
-        });
+            if (this.attackCooldown > 0) this.attackCooldown--;
+        },
+        
+        draw: function(ctx) {
+            drawProceduralSprite(ctx, SpriteData.knight, this.x, this.y, 5);
+            
+            // Draw Sword if attacking
+            if (this.attackCooldown > 15) {
+                ctx.save();
+                ctx.translate(this.x + 35, this.y + 10);
+                ctx.rotate(Math.PI / 4);
+                drawProceduralSprite(ctx, SpriteData.sword, 0, 0, 4);
+                ctx.restore();
+            }
 
-        window.onload = resetToMenu;
-    </script>
-</body>
-</html>
+            // Draw Health Bar
+            ctx.fillStyle = '#333';
+            ctx.fillRect(this.x, this.y - 15, this.width, 5);
+            ctx.fillStyle = '#ff0000';
+            const hpPerc = Math.max(0, state.player.hp / state.player.maxHp);
+            ctx.fillRect(this.x, this.y - 15, this.width * hpPerc, 5);
+        },
+
+        jump: function() {
+            if (this.isGrounded) {
+                this.velocityY = this.jumpPower;
+                spawnParticles(this.x + 20, this.y + 40, '#888', 5, 2);
+            }
+        },
+
+        attack: function() {
+            if (this.attackCooldown === 0) {
+                this.attackCooldown = 30;
+                checkCombatHit();
+            }
+        }
+    };
+
+    // Entity: Enemy
+    let enemyEntity = null;
+
+    function spawnEnemy() {
+        const hp = GameMath.getEnemyHP(state.world.enemyLevel);
+        enemyEntity = {
+            x: width + 50,
+            y: height - 90,
+            width: 40,
+            height: 40,
+            maxHp: hp,
+            hp: hp,
+            speed: 2 + Math.random() * 2,
+            level: state.world.enemyLevel,
+            damage: GameMath.getEnemyDamage(state.world.enemyLevel),
+            
+            update: function() {
+                this.x -= this.speed;
+                // Collision with player
+                if (this.x < playerEntity.x + playerEntity.width && this.x + this.width > playerEntity.x) {
+                    // Deal damage to player
+                    let dmgTaken = Math.max(1, this.damage - (state.upgrades.armor.level * 2));
+                    state.player.hp -= dmgTaken;
+                    spawnParticles(playerEntity.x + 20, playerEntity.y + 20, '#ff0000', 10, 3);
+                    floatingTexts.push(new FloatingText(playerEntity.x, playerEntity.y - 20, `-${NumberFormatter.format(dmgTaken)}`, '#ff0000'));
+                    
+                    // Bounce enemy back
+                    this.x += 100;
+                    
+                    if (state.player.hp <= 0) {
+                        dieAndRespawn();
+                    }
+                }
+
+                // If enemy goes off screen, respawn new
+                if (this.x < -100) {
+                    spawnEnemy();
+                }
+            },
+            
+            draw: function(ctx) {
+                drawProceduralSprite(ctx, SpriteData.slime, this.x, this.y, 5);
+                
+                // Enemy Level & HP
+                ctx.fillStyle = '#fff';
+                ctx.font = "8px 'Press Start 2P'";
+                ctx.fillText(`Lv.${this.level}`, this.x, this.y - 20);
+
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x, this.y - 10, this.width, 4);
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(this.x, this.y - 10, this.width * (this.hp / this.maxHp), 4);
+            }
+        };
+    }
+
+    function checkCombatHit() {
+        if (!enemyEntity) return;
+        const attackRange = 80;
+        const dist = enemyEntity.x - (playerEntity.x + playerEntity.width);
+        
+        if (dist > -20 && dist < attackRange) {
+            // Hit!
+            const baseDmg = state.player.damage;
+            // Apply Magic Star multiplier to damage? Optional, but prompt says stars give 1% more MONEY. So standard damage.
+            
+            enemyEntity.hp -= baseDmg;
+            spawnParticles(enemyEntity.x + 20, enemyEntity.y + 20, '#fff', 5, 4);
+            floatingTexts.push(new FloatingText(enemyEntity.x, enemyEntity.y - 20, NumberFormatter.format(baseDmg), '#fff'));
+            
+            // Knockback
+            enemyEntity.x += 15;
+
+            if (enemyEntity.hp <= 0) {
+                killEnemy();
+            }
+        }
+    }
+
+    function killEnemy() {
+        // Explode into particles
+        spawnParticles(enemyEntity.x + 20, enemyEntity.y + 20, '#00ff00', 20, 5);
+        
+        // Calculate Gold with Magic Star Bonus (1% per star)
+        let baseGold = GameMath.getEnemyGold(enemyEntity.level);
+        let multiplier = 1 + (state.magicStars * 0.01);
+        let totalGold = baseGold * multiplier;
+        
+        addGold(totalGold);
+        floatingTexts.push(new FloatingText(enemyEntity.x, enemyEntity.y - 40, `+${NumberFormatter.format(totalGold)} Gold`, '#ffd700'));
+        
+        state.world.kills++;
+        if (state.world.kills >= 5) {
+            state.world.kills = 0;
+            state.world.enemyLevel++;
+        }
+        
+        spawnEnemy();
+    }
+
+    function dieAndRespawn() {
+        // Reset player HP and push enemy back
+        state.player.hp = state.player.maxHp;
+        if(enemyEntity) enemyEntity.x = width + 50;
+        floatingTexts.push(new FloatingText(playerEntity.x, playerEntity.y - 50, "REVIVED!", '#00ffff'));
+    }
+
+    function addGold(amount) {
+        state.gold += amount;
+        state.lifetimeGold += amount;
+        updateUI();
+    }
+
+    // Helper Graphics Function
+    function drawProceduralSprite(ctx, spriteArray, startX, startY, pixelSize) {
+        for (let row = 0; row < spriteArray.length; row++) {
+            let cols = spriteArray[row].split('');
+            for (let col = 0; col < cols.length; col++) {
+                let colorCode = cols[col];
+                if (colorCode !== '0' && ColorPalette[colorCode]) {
+                    ctx.fillStyle = ColorPalette[colorCode];
+                    ctx.fillRect(startX + col * pixelSize, startY + row * pixelSize, pixelSize, pixelSize);
+                }
+            }
+        }
+    }
+
+    function spawnParticles(x, y, color, count, speedMulti) {
+        for(let i=0; i<count; i++) {
+            let sx = (Math.random() - 0.5) * speedMulti * 2;
+            let sy = (Math.random() - 0.5) * speedMulti * 2 - 2;
+            particles.push(new Particle(x, y, color, sx, sy, 20 + Math.random() * 20));
+        }
+    }
+
+    // Background Rendering
+    let bgOffset = 0;
+    function drawBackground() {
+        bgOffset -= 0.5;
+        if(bgOffset <= -100) bgOffset = 0;
+
+        // Ground
+        ctx.fillStyle = '#2d1b00';
+        ctx.fillRect(0, height - 50, width, 50);
+        
+        // Grass top
+        ctx.fillStyle = '#0a5c0a';
+        ctx.fillRect(0, height - 50, width, 10);
+        
+        // Parallax simple trees/mountains could go here
+        ctx.fillStyle = '#111'; // Dark overlay for atmosphere
+        ctx.fillRect(0,0, width, height - 50);
+        
+        // Draw moon
+        ctx.fillStyle = '#eee';
+        ctx.beginPath();
+        ctx.arc(width - 100, 80, 30, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Main Game Loop
+    let lastTime = 0;
+    function gameLoop(timestamp) {
+        const dt = timestamp - lastTime;
+        lastTime = timestamp;
+
+        ctx.clearRect(0, 0, width, height);
+        
+        drawBackground();
+
+        playerEntity.update();
+        playerEntity.draw(ctx);
+
+        if(enemyEntity) {
+            enemyEntity.update();
+            enemyEntity.draw(ctx);
+        }
+
+        // Particles
+        for(let i = particles.length - 1; i >= 0; i--) {
+            particles[i].update();
+            particles[i].draw(ctx);
+            if(particles[i].life <= 0) particles.splice(i, 1);
+        }
+
+        // Floating Texts
+        for(let i = floatingTexts.length - 1; i >= 0; i--) {
+            floatingTexts[i].update()
